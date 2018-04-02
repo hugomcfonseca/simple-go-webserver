@@ -11,12 +11,6 @@ import (
 	vault_api "github.com/hashicorp/vault/api"
 )
 
-// HTTPResponse Structure used to define response object of every route request
-type HTTPResponse struct {
-	Status  bool   `json:"status"`
-	Content string `json:"content"`
-}
-
 var (
 	listenAddress = flag.String("address", "0.0.0.0", "Domain or IP address where server is listening")
 	listenPort    = flag.Int("port", 10000, "Webserver listening port")
@@ -56,36 +50,39 @@ func initVault() (*vault_api.Logical, error) {
 
 // routeResponse Used to build response to API requests
 func routeResponse(w http.ResponseWriter, httpStatus bool, contents string) {
-	res := new(HTTPResponse)
-
 	if httpStatus {
 		w.WriteHeader(200)
 	} else {
 		w.WriteHeader(403)
 	}
 
-	res.Status = httpStatus
-	res.Content = contents
-	response, _ := json.Marshal(res)
+	response, _ := json.Marshal(contents)
 	fmt.Fprintf(w, "%s", response)
 }
 
-// RouteRundeckNodes ...
+// RouteRundeckNodes is an endpoint that exposes all RunDeck nodes by a given
+// project (it receives project as a querystring parameter)
+// E.g.: `GET /rundeck/nodes?project=my-project`
 func RouteRundeckNodes(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("%s", r.URL.Query().Get("project"))
+	projectName := r.URL.Query().Get("project")
+	vaultPath := "/secret/rundeck/ops/nodes/" + projectName
 
-	log.Print("Reading RunDeck nodes: project ...")
-
-	projectName := "/secret/rundeck/ops/nodes"
+	log.Printf("Reading RunDeck nodes: project '%s'...", projectName)
 
 	vaultClient, err := initVault()
 	if err != nil {
+		log.Panic(err)
 		return
 	}
 
-	nodesList, err := vaultClient.Read(projectName)
+	nodesList, err := vaultClient.Read(vaultPath)
 	if err != nil {
+		log.Panic(err)
 		routeResponse(w, false, "")
 	}
-	routeResponse(w, true, fmt.Sprintf("%#v", nodesList.Data))
+
+	var contents string
+	fmt.Printf("%#v", nodesList.Data)
+
+	routeResponse(w, true, contents)
 }

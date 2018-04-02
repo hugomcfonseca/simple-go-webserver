@@ -21,12 +21,8 @@ ENV LISTEN_PORT='10000' \
 
 COPY --from=builder /go/src/github.com/hugomcfonseca/go-simple-webserver/webserver /usr/local/bin/
 
-RUN wget -qO /usr/local/bin/confd https://github.com/kelseyhightower/confd/releases/download/v${CONFD_VERSION}/confd-${CONFD_VERSION}-linux-amd64 \
-        && chmod u+x /usr/local/bin/confd /usr/local/bin/webserver
+RUN chmod u+x /usr/local/bin/webserver
 
 VOLUME /confs
 
-ENTRYPOINT [ webserver ]
-
-CMD \
-    exec confd ${CONFD_OPTS}
+ENTRYPOINT [ "webserver" ]
