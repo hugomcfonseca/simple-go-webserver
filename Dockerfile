@@ -26,7 +26,7 @@ RUN wget -qO /usr/local/bin/confd https://github.com/kelseyhightower/confd/relea
 
 VOLUME /confs
 
-ENTRYPOINT [ webhooker ]
+ENTRYPOINT [ webserver ]
 
 CMD \
     exec confd ${CONFD_OPTS}
